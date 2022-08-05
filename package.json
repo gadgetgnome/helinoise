@@ -1,0 +1,25 @@
+{
+  "name": "helinoise",
+  "version": "0.0.1",
+  "description": "A small heligame!",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "parcel src/templates/index.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gadgetgnome/helinoise.git"
+  },
+  "author": "Pål Smitt-Amundsen",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gadgetgnome/helinoise/issues"
+  },
+  "homepage": "https://github.com/gadgetgnome/helinoise#readme",
+  "dependencies": {
+    "parcel": "^2.7.0",
+    "three": "^0.143.0"
+  },
+  "source": "src/templates/index.html"
+}
