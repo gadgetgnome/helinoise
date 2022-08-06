@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/gadgetgnome/helinoise#readme",
   "dependencies": {
+    "noisejs": "^2.1.0",
     "parcel": "^2.7.0",
     "three": "^0.143.0"
   },

@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import Noise from "noisejs";
 import { FlyControls } from "three/examples/jsm/controls/FlyControls.js";
 
 // Scene
@@ -16,7 +17,17 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+// GEO
 const geometry = new THREE.PlaneGeometry(100, 100, 1600, 1600);
+
+geometry.attributes.position.array = geometry.attributes.position.array.map(
+  (p, i) => ((i + 1) % 3 === 0 ? p + Math.random() * 0.1 : p)
+);
+geometry.computeVertexNormals();
+geometry.computeTangents();
+
+// MAt
+
 const material = new THREE.MeshBasicMaterial({
   color: 0xffffff,
 });
