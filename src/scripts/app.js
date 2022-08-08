@@ -1,15 +1,20 @@
 import * as THREE from "three";
-import { Noise } from "noisejs";
 import { FlyControls } from "three/examples/jsm/controls/FlyControls.js";
+import Stats from "three/examples/jsm/libs/stats.module";
+
+const stats = Stats();
+document.body.appendChild(stats.dom);
 
 // Scene
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0x0, 0, 4);
 
+const planeSize = 20;
+
 const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
-  0.01,
+  0.05,
   1000
 );
 
@@ -18,23 +23,11 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // GEO // TERRAIN
-const geometry = new THREE.PlaneGeometry(100, 100, 1600, 1600);
+const geometry = new THREE.PlaneGeometry(planeSize, planeSize, 160, 160);
 
 // https://www.npmjs.com/package/noisejs
 
 const geoArr = geometry.attributes.position.array;
-console.time("terrain");
-const noise = new Noise(0);
-const noiseFrequency = 0.2;
-const noiseAmp = 1;
-for (let index = 2; index < geoArr.length; index += 3) {
-  geoArr[index] =
-    noise.simplex2(
-      geoArr[index - 2] * noiseFrequency,
-      geoArr[index - 1] * noiseFrequency
-    ) * noiseAmp;
-}
-console.timeEnd("terrain");
 
 geometry.computeBoundingBox();
 geometry.computeBoundingSphere();
@@ -42,11 +35,65 @@ geometry.computeVertexNormals();
 geometry.computeTangents();
 
 // Material
-const material = new THREE.MeshBasicMaterial({
-  color: 0xffffff,
+let uniforms = {
+  colorB: { type: "vec3", value: new THREE.Color(0x24ebd5) },
+  colorA: { type: "vec3", value: new THREE.Color(0x0) },
+  offset: { type: "vec2", value: new THREE.Vector2(0, 0) },
+};
+
+function vertexShader() {
+  return `
+    varying vec3 vUv;
+    uniform vec2 offset;
+    
+    float rand(vec2 n) { 
+      return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
+    }
+    
+    float noise(vec2 p){
+      vec2 ip = floor(p);
+      vec2 u = fract(p);
+      u = u*u*(3.0-2.0*u);
+      
+      float res = mix(
+        mix(rand(ip),rand(ip+vec2(1.0,0.0)),u.x),
+        mix(rand(ip+vec2(0.0,1.0)),rand(ip+vec2(1.0,1.0)),u.x),u.y);
+      return res*res;
+    }
+
+    void main() {
+      vec3 pos = position;
+      float noiseFrequency = .3;
+      pos.z += noise(vec2 (pos.x * noiseFrequency + offset.x, pos.y * noiseFrequency + offset.y) * 5.);
+
+
+      vUv = pos; 
+      vec4 modelViewPosition = modelViewMatrix * vec4(pos, 1.0);
+      gl_Position = projectionMatrix * modelViewPosition; 
+      
+    }
+  `;
+}
+
+function fragmentShader() {
+  return `
+  uniform vec3 colorA; 
+  uniform vec3 colorB; 
+  varying vec3 vUv;
+
+  void main() {
+    gl_FragColor = vec4(mix(colorA, colorB, vUv.z), 1.0);
+  }
+`;
+}
+
+const material = new THREE.ShaderMaterial({
+  uniforms,
+  vertexShader: vertexShader(),
+  fragmentShader: fragmentShader(),
 });
 const cube = new THREE.Mesh(geometry, material);
-material.wireframe = true;
+// material.wireframe = true;
 
 window.material = material;
 
@@ -54,7 +101,7 @@ scene.add(cube);
 
 const heli = new THREE.Object3D();
 heli.add(camera);
-heli.position.y = 0.2;
+heli.position.y = 1.1;
 scene.add(heli);
 // camera.rotation.x = -Math.PI / 4;
 
@@ -78,6 +125,7 @@ scene.add(heli);
 
 const clock = new THREE.Clock();
 cube.rotation.x = -Math.PI / 2;
+cube.position.z = -planeSize / 2;
 
 function animate() {
   const delta = clock.getDelta();
@@ -86,9 +134,14 @@ function animate() {
   // cube.rotation.y += 0.01;
 
   renderer.render(scene, camera);
-  heli.position.z -= 0.002;
+  material.uniforms.offset.value.y += 0.008;
+  // heli.position.z -= 0.002;
   heli.rotation.z = Math.sin(new Date() / 1000) / 4;
   // controls.update(delta);
+
+  stats.update();
 }
 
 animate();
+
+window.m = material;
