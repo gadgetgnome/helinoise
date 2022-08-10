@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { FlyControls } from "three/examples/jsm/controls/FlyControls.js";
 import Stats from "three/examples/jsm/libs/stats.module";
+import vertexShader from "./vertexShader.glsl";
+import fragmentShader from "./fragmentShader.glsl";
 
 const stats = Stats();
 document.body.appendChild(stats.dom);
@@ -18,12 +20,14 @@ const camera = new THREE.PerspectiveCamera(
   1000
 );
 
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({
+  resolution: 2,
+});
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // GEO // TERRAIN
-const geometry = new THREE.PlaneGeometry(planeSize, planeSize, 160, 160);
+const geometry = new THREE.PlaneGeometry(planeSize, planeSize, 200, 200);
 
 // https://www.npmjs.com/package/noisejs
 
@@ -41,59 +45,13 @@ let uniforms = {
   offset: { type: "vec2", value: new THREE.Vector2(0, 0) },
 };
 
-function vertexShader() {
-  return `
-    varying vec3 vUv;
-    uniform vec2 offset;
-    
-    float rand(vec2 n) { 
-      return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
-    }
-    
-    float noise(vec2 p){
-      vec2 ip = floor(p);
-      vec2 u = fract(p);
-      u = u*u*(3.0-2.0*u);
-      
-      float res = mix(
-        mix(rand(ip),rand(ip+vec2(1.0,0.0)),u.x),
-        mix(rand(ip+vec2(0.0,1.0)),rand(ip+vec2(1.0,1.0)),u.x),u.y);
-      return res*res;
-    }
-
-    void main() {
-      vec3 pos = position;
-      float noiseFrequency = .3;
-      pos.z += noise(vec2 (pos.x * noiseFrequency + offset.x, pos.y * noiseFrequency + offset.y) * 5.);
-
-
-      vUv = pos; 
-      vec4 modelViewPosition = modelViewMatrix * vec4(pos, 1.0);
-      gl_Position = projectionMatrix * modelViewPosition; 
-      
-    }
-  `;
-}
-
-function fragmentShader() {
-  return `
-  uniform vec3 colorA; 
-  uniform vec3 colorB; 
-  varying vec3 vUv;
-
-  void main() {
-    gl_FragColor = vec4(mix(colorA, colorB, vUv.z), 1.0);
-  }
-`;
-}
-
 const material = new THREE.ShaderMaterial({
   uniforms,
-  vertexShader: vertexShader(),
-  fragmentShader: fragmentShader(),
+  vertexShader: vertexShader,
+  fragmentShader: fragmentShader,
 });
 const cube = new THREE.Mesh(geometry, material);
-// material.wireframe = true;
+material.wireframe = true;
 
 window.material = material;
 
@@ -125,7 +83,7 @@ scene.add(heli);
 
 const clock = new THREE.Clock();
 cube.rotation.x = -Math.PI / 2;
-cube.position.z = -planeSize / 2;
+// cube.position.z = -planeSize / 2;
 
 function animate() {
   const delta = clock.getDelta();
@@ -134,9 +92,10 @@ function animate() {
   // cube.rotation.y += 0.01;
 
   renderer.render(scene, camera);
-  material.uniforms.offset.value.y += 0.008;
+  const direction = Math.sin(new Date() / 1000) / 4;
+  material.uniforms.offset.value.y += delta * 0.5;
   // heli.position.z -= 0.002;
-  heli.rotation.z = Math.sin(new Date() / 1000) / 4;
+  heli.rotation.z = direction;
   // controls.update(delta);
 
   stats.update();

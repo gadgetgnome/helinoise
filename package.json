@@ -22,5 +22,8 @@
     "parcel": "^2.7.0",
     "three": "^0.143.0"
   },
-  "source": "src/templates/index.html"
+  "source": "src/templates/index.html",
+  "devDependencies": {
+    "@parcel/transformer-glsl": "^2.7.0"
+  }
 }
