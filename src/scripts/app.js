@@ -85,18 +85,38 @@ const clock = new THREE.Clock();
 cube.rotation.x = -Math.PI / 2;
 // cube.position.z = -planeSize / 2;
 
+let pointer = (() => {
+  const ret = {};
+
+  window.addEventListener("pointermove", (e) => {
+    ret.x = (e.clientX - window.innerWidth / 2) / window.innerWidth / 2;
+  });
+
+  return ret;
+})();
+
 function animate() {
   const delta = clock.getDelta();
   requestAnimationFrame(animate);
-
-  // cube.rotation.y += 0.01;
+  const heliSpeedForward = delta * 0.5;
 
   renderer.render(scene, camera);
-  const direction = Math.sin(new Date() / 1000) / 4;
-  material.uniforms.offset.value.y += delta * 0.5;
-  // heli.position.z -= 0.002;
-  heli.rotation.z = direction;
-  // controls.update(delta);
+  heli.rotation.z =
+    pointer.x == undefined
+      ? Math.sin(new Date() / 1000) / 4
+      : heli.rotation.z + (Math.PI / 2) * -pointer.x * 0.04;
+
+  heli.rotation.z = Math.max(
+    -Math.PI / 3,
+    Math.min(Math.PI / 3, heli.rotation.z)
+  );
+
+  heli.rotation.y += heli.rotation.z * 0.01;
+
+  material.uniforms.offset.value.y +=
+    heliSpeedForward * Math.cos(-heli.rotation.y);
+  material.uniforms.offset.value.x +=
+    heliSpeedForward * Math.sin(-heli.rotation.y);
 
   stats.update();
 }
