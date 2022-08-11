@@ -2,7 +2,7 @@
   "name": "helinoise",
   "version": "0.0.1",
   "description": "A small heligame!",
-  "main": "src/index.js",
+  "main": "src/scripts/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "parcel src/templates/index.html"
